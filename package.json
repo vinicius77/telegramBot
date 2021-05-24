@@ -1,0 +1,17 @@
+{
+  "name": "telegramBot",
+  "version": "1.0.0",
+  "description": "A Telegram bot that counts the number of cryptocurrency mentions in a given group",
+  "main": "index.js",
+  "author": "Vinciius Cerqueira Bonifácio",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "dotenv": "^10.0.0",
+    "node-telegram-bot-api": "^0.53.0",
+    "nodemon": "^2.0.7"
+  }
+}
