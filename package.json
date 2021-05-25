@@ -1,5 +1,5 @@
 {
-  "name": "telegramBot",
+  "name": "telegram-bot",
   "version": "1.0.0",
   "description": "A Telegram bot that counts the number of cryptocurrency mentions in a given group",
   "main": "index.js",
@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "dotenv": "^10.0.0",
+    "fast-csv": "^4.3.6",
     "node-telegram-bot-api": "^0.53.0",
-    "nodemon": "^2.0.7"
+    "nodemon": "^2.0.7",
+    "objects-to-csv": "^1.3.6"
   }
 }
