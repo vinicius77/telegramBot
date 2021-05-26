@@ -3,7 +3,7 @@ const TelegramBot = require('node-telegram-bot-api');
 const ObjectsToCsv = require('objects-to-csv');
 const path = require('path');
 const fs = require('fs');
-const fastcsv = require('fast-csv');
+const createCSVWriter = require('csv-writer').createObjectCsvWriter;
 
 // Mock Data
 const cryptocurrencyNames = [
@@ -19,6 +19,11 @@ const cryptocurrencyNames = [
   { name: 'BinanceCoin BNB', mentions: 0 },
   { name: 'Dogecoin DOGE', mentions: 0 },
 ];
+
+// Helper Functions
+const isIncluded = (tickerOrName, text) => {
+  return text.toLowerCase().includes(tickerOrName.toLowerCase());
+};
 
 // Creates the path where the CSV file will be stored under the cryptocurrency name
 const createCSVPath = (data) => {
@@ -41,6 +46,11 @@ const createInitialCSVFiles = (data) => {
       // the path where the file will be stored
       await csv.toDisk(csvPath);
       return;
+    } else {
+      // TODO
+      // When there is files already updates the harcoded array with the number of mentions because
+      // if the system downs for any reason it will get back top zero and will overwrite the already
+      // counted mentions
     }
   });
 };
@@ -63,7 +73,52 @@ const main = () => {
     createInitialCSVFiles([cryptoObj]);
   }
 
+  // BOT config 🤖
   const bot = new TelegramBot(process.env.token, { polling: true });
+
+  bot.on('message', async (msg) => {
+    // For loop that goes through every ticker and compares if the
+    // message sent includes it
+    for (cryptoCurr of cryptocurrencyNames) {
+      // destructuring name and ticker
+      const [currName, ticker] = cryptoCurr.name.split(' ');
+      const text = msg.text;
+
+      if (isIncluded(currName, text) || isIncluded(ticker, text)) {
+        // Increases the metions counter
+        cryptoCurr.mentions += 1;
+        const filePath = path.join(
+          __dirname,
+          `./csv/${currName.toLowerCase()}(${ticker.toLowerCase()}).csv`
+        );
+
+        const csvWriter = createCSVWriter({
+          path: filePath,
+          // mentions is the cell that will be updated
+          // title is the equivalent of column name
+          header: [
+            {
+              id: 'name',
+              title: 'Name',
+            },
+            { id: 'ticker', title: 'Ticker' },
+            { id: 'mentions', title: 'Mentions' },
+            ,
+          ],
+        });
+        // updating the cell "mentions" with the increased value
+        const records = [
+          {
+            name: currName.toLowerCase(),
+            ticker: ticker.toLowerCase(),
+            mentions: cryptoCurr.mentions,
+          },
+        ];
+        await csvWriter.writeRecords(records);
+        return;
+      }
+    }
+  });
 };
 
 main();
