@@ -1,20 +1,11 @@
 require('dotenv').config();
-const ObjectsToCsv = require('objects-to-csv');
 const TelegramBot = require('node-telegram-bot-api');
+const ObjectsToCsv = require('objects-to-csv');
 const path = require('path');
 const fs = require('fs');
-const bot = new TelegramBot(process.env.token, { polling: true });
 const fastcsv = require('fast-csv');
-/**bot.onText(/\/echo (.+)/, (msg, match) => {
-  const chatId = msg.chat.id;
-  const resp = match[1];
 
-  if (match[1].toLowerCase().includes('kako')) {
-    bot.sendMessage(chatId, 'That is it');
-  } else {
-    bot.sendMessage(chatId, resp);
-  }
-});*/
+// Mock Data
 const cryptocurrencyNames = [
   { name: 'Litecoin LTC', mentions: 0 },
   { name: 'Ethereum ETH', mentions: 0 },
@@ -29,73 +20,50 @@ const cryptocurrencyNames = [
   { name: 'Dogecoin DOGE', mentions: 0 },
 ];
 
-const createAndWriteCSVFile = (data) => {
-  const csvPath = path.join(
-    __dirname,
-    `./csv/${data[0].name}(${data[0].ticker}).csv`
-  );
+// Creates the path where the CSV file will be stored under the cryptocurrency name
+const createCSVPath = (data) => {
+  // Captalized given some CSV format issues
+  const { Name, Ticker } = data;
 
-  // if the ticker files don't exist yet create them
+  return path.join(__dirname, `./csv/${Name}(${Ticker}).csv`);
+};
+
+// This function creates one file for every cryptocurrency ticker
+// only if they dont exist yet
+// e.g. `./csv/dogecoin(doge).csv`
+const createInitialCSVFiles = (data) => {
+  const csvPath = createCSVPath(data[0]);
   fs.access(csvPath, fs.F_OK, async (error) => {
+    // If there is an error it means there are no csv file yet
     if (error) {
-      // Save File To Path
+      // data is an array containing an individual object (cryptocurrency)
       const csv = new ObjectsToCsv(data);
+      // the path where the file will be stored
       await csv.toDisk(csvPath);
       return;
-    } else {
-      //const ws = fs.createWriteStream(csvPath);
-      //const res = fastcsv.write(data, { headers: true }).pipe(ws);
-      //console.log(res.data);
-      // Should increase its mentions by one
-      // Load the CSV records from the file:
     }
   });
 };
 
-for (cryptoCurr of cryptocurrencyNames) {
-  // destructuring the cryptoCurrency object
-  const { name, mentions } = cryptoCurr;
-  // destructuring name and ticker
-  const [currName, ticker] = name.split(' ');
-
-  // standarizing data
-  const cryptoObj = {
-    name: currName.toLowerCase(),
-    ticker: ticker.toLowerCase(),
-    mentions,
-  };
-
-  // Creates the csv files for each ticker
-  createAndWriteCSVFile([cryptoObj]);
-}
-
-bot.on('message', async (msg) => {
-  const chatID = msg.chat.id;
-
+const main = () => {
+  // creating the initial CSV files on start
   for (cryptoCurr of cryptocurrencyNames) {
-    // destructuring name and ticker
-    const [currName, ticker] = cryptoCurr.name.split(' ');
-    const { mentions } = cryptoCurr;
+    const { name, mentions } = cryptoCurr;
+    const [currName, ticker] = name.split(' ');
 
-    console.log(currName, ticker, mentions);
+    // standarizing data
+    // Captalized given csv format issues
+    const cryptoObj = {
+      Name: currName.toLowerCase(),
+      Ticker: ticker.toLowerCase(),
+      Mentions: mentions,
+    };
 
-    // helper function
-    //const isIncluded = (tickerOrName) => {
-    //  return msg.text.toLowerCase().includes(tickerOrName.toLowerCase());
-    //};
-
-    //if (isIncluded(currName) || isIncluded(ticker)) {
-    //console.log(currName, ticker);
-
-    // TODO
-    // When it is included it should check in the csv file
-    // if the ticker already exists
-    // if not, creates a new entry using the Ticker (to avoid duplicated)
-    // else should increase the value for example BTC: 22 after the mention should be 23
-    //  console.log('Yeah');
-    //} else {
-    // console.log('Should Do Nothing');
-    //}
+    // Creates the csv files for each ticker
+    createInitialCSVFiles([cryptoObj]);
   }
-  bot.sendMessage(chatID, 'not include');
-});
+
+  const bot = new TelegramBot(process.env.token, { polling: true });
+};
+
+main();
